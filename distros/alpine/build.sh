@@ -134,7 +134,7 @@ sudo tee "$ROOTFS/etc/hosts" >/dev/null <<'EOF'
 EOF
 
 sudo tee "$ROOTFS/etc/fstab" >/dev/null <<EOF
-PARTLABEL=userdata / ext4 rw,noatime 0 1
+PARTLABEL=$ROOT_PARTITION_LABEL / ext4 rw,noatime 0 1
 EOF
 
 # Keep a stable per-image identifier for the USB serial fallback.

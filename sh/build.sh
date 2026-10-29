@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rootfs builder: one script, three distros. Conf-driven, zero validation
 # layers; consumes the published mainline kernel checkpoint and produces a
-# raw ext4 image (never touching the kernel sources or compile).
+# GPT SD-card disk image (never touching the kernel sources or compile).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CACHE="$ROOT/cache"
@@ -14,7 +14,8 @@ Usage: bash sh/build.sh <alpine|debian|ubuntu>
 
 Reuses the kernel checkpoint in cache/mainline/checkpoint (built by the
 main branch; on GitHub Actions the newest successful mainline artifact is
-downloaded instead). Creates build/rootfs/<distro>/<distro>-STAMP.ext4 (raw).
+downloaded instead). Creates build/rootfs/<distro>/<distro>-STAMP.img
+(GPT SD-card disk image).
 EOF
 }
 case "$DISTRO" in alpine|debian|ubuntu) ;; *) usage; exit 2;; esac
@@ -74,8 +75,9 @@ MODULES="${KERNEL_MODULES_ARCHIVE:-$CHECKPOINT/${MODULES_ARCHIVE_BASE:-kernel-mo
 source "$ROOT/sh/deps.sh"
 install_host_deps "$DISTRO"
 
-# Raw generator: an adapted COPY of the distro builder (fixed raw ext4 size,
-# no zstd), with the sizes from conf/rootfs.conf. Scratch, never committed.
+# Raw generator: an adapted COPY of the distro builder (GPT SD-card disk
+# image, no zstd), with the sizes and partition label from conf/rootfs.conf.
+# Scratch, never committed.
 OUT_DIR="$CACHE/rootfs/$DISTRO/out"
 WORK_DIR="$CACHE/rootfs/$DISTRO/work"
 BUILDER="$ROOT/.work/rootfs/$DISTRO/raw/.local-raw-build.sh"
@@ -83,18 +85,19 @@ mkdir -p "$OUT_DIR" "$WORK_DIR" "$(dirname "$BUILDER")" "$BUILDS/rootfs/$DISTRO"
 rm -f "$OUT_DIR"/*
 python3 "$ROOT/sh/lib/raw-rootfs-builder.py" "$ROOT/distros/$DISTRO/build.sh" "$BUILDER" "$DISTRO" "$DEVICE"
 
-export DISTRO ROOTFS_LABEL="$DISTRO" KERNEL_RELEASE="$KREL" WORK_DIR OUT_DIR REPO_ROOT="$ROOT"
+export DISTRO ROOTFS_LABEL="$DISTRO" ROOT_PARTITION_LABEL="${ROOT_PARTITION_LABEL:-sdcard}"
+export KERNEL_RELEASE="$KREL" WORK_DIR OUT_DIR REPO_ROOT="$ROOT"
 export KERNEL_MODULES_ARCHIVE="$MODULES"
 export KERNEL_CONFIG_FILE="$CHECKPOINT/kernel.config" KERNEL_SYSTEM_MAP_FILE="$CHECKPOINT/System.map"
 say "Building $DEVICE $DISTRO from the cached kernel modules; no kernel compile."
 bash "$BUILDER"
 
 # Date the raw image into build/ and carry its metadata along.
-RAW="$OUT_DIR/$DISTRO-$DEVICE-rootfs.ext4"
+RAW="$OUT_DIR/$DISTRO-$DEVICE-rootfs.img"
 STAMP="$(date -u +%Y%m%d%H%M%S)"
 NAME="$DISTRO-$STAMP"
 DEST="$BUILDS/rootfs/$DISTRO"
-mv "$RAW" "$DEST/$NAME.ext4"
+mv "$RAW" "$DEST/$NAME.img"
 cp "$OUT_DIR/build-info.txt" "$DEST/$NAME.build-info.txt"
 cp "$CHECKPOINT/boot-$DEVICE.img" "$DEST/$NAME.boot.img"
 printf 'device=%s\ndistribution=%s\nbuild_utc=%s\nkernel_release=%s\nmodules_archive=%s\n' \

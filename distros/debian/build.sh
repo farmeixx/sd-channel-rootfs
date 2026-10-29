@@ -60,7 +60,7 @@ sudo tee "$ROOTFS/etc/hosts" >/dev/null <<'HOSTS'
 HOSTS
 
 sudo tee "$ROOTFS/etc/fstab" >/dev/null <<FSTAB
-PARTLABEL=userdata / ext4 rw,noatime 0 1
+PARTLABEL=$ROOT_PARTITION_LABEL / ext4 rw,noatime 0 1
 FSTAB
 
 # USB-only open root SSH; local root password remains non-empty.
@@ -130,7 +130,8 @@ sudo rm -f "$ROOTFS/usr/bin/qemu-aarch64-static"
 
 #------------------------------------------------------------------#
 
-# Fixed initial ext4 capacity. The user expands / on userdata with resize2fs.
+# Fixed initial capacity; the GPT SD-card image spans its one partition
+# exactly. On a bigger card, grow the partition and run resize2fs manually.
 # A smaller image is only published if ext4 itself reports safe free space.
 USED_MB="$(sudo du -sm "$ROOTFS" | awk '{print $1}')"
 IMAGE_MB=1024
