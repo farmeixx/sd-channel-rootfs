@@ -83,10 +83,10 @@ WORK_DIR="$CACHE/rootfs/$DISTRO/work"
 BUILDER="$ROOT/.work/rootfs/$DISTRO/raw/.local-raw-build.sh"
 mkdir -p "$OUT_DIR" "$WORK_DIR" "$(dirname "$BUILDER")" "$BUILDS/rootfs/$DISTRO"
 rm -f "$OUT_DIR"/*
+export ROOT_PARTITION_LABEL="${ROOT_PARTITION_LABEL:-sdcard}"
 python3 "$ROOT/sh/lib/raw-rootfs-builder.py" "$ROOT/distros/$DISTRO/build.sh" "$BUILDER" "$DISTRO" "$DEVICE"
 
-export DISTRO ROOTFS_LABEL="$DISTRO" ROOT_PARTITION_LABEL="${ROOT_PARTITION_LABEL:-sdcard}"
-export KERNEL_RELEASE="$KREL" WORK_DIR OUT_DIR REPO_ROOT="$ROOT"
+export DISTRO ROOTFS_LABEL="$DISTRO" KERNEL_RELEASE="$KREL" WORK_DIR OUT_DIR REPO_ROOT="$ROOT"
 export KERNEL_MODULES_ARCHIVE="$MODULES"
 export KERNEL_CONFIG_FILE="$CHECKPOINT/kernel.config" KERNEL_SYSTEM_MAP_FILE="$CHECKPOINT/System.map"
 say "Building $DEVICE $DISTRO from the cached kernel modules; no kernel compile."
