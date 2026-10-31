@@ -10,11 +10,34 @@ ROOTFS_LABEL="${ROOTFS_LABEL:-alpine}"
 : "${KERNEL_MODULES_ARCHIVE:?set KERNEL_MODULES_ARCHIVE}"
 : "${KERNEL_CONFIG_FILE:?set KERNEL_CONFIG_FILE}"
 : "${KERNEL_SYSTEM_MAP_FILE:?set KERNEL_SYSTEM_MAP_FILE}"
-ALPINE_VERSION="${ALPINE_VERSION:-3.24.2}"
-ALPINE_BRANCH="${ALPINE_BRANCH:-v${ALPINE_VERSION%.*}}"
 ALPINE_MIRROR="${ALPINE_MIRROR:-https://dl-cdn.alpinelinux.org/alpine}"
 ALPINE_ARCH="${ALPINE_ARCH:-aarch64}"
-APK_TOOLS_STATIC_VERSION="${APK_TOOLS_STATIC_VERSION:-3.0.8-r0}"
+HOST_ARCH="$(uname -m)"
+
+# Alpine version: an empty ALPINE_VERSION (the conf default) detects the
+# latest stable release from the CDN's latest-stable listing; set
+# ALPINE_VERSION in conf/rootfs.conf to pin a release for reproducible
+# builds. The .sha256 sidecar still verifies every download.
+if [ -z "${ALPINE_VERSION:-}" ]; then
+  RELEASES_HTML="$(curl -fsSL --retry 3 "${ALPINE_MIRROR}/latest-stable/releases/${ALPINE_ARCH}/")"
+  MINIROOTFS_FILE="$(printf '%s' "$RELEASES_HTML" | grep -oE "alpine-minirootfs-[0-9][0-9.]*-${ALPINE_ARCH}\.tar\.gz" | sort -uV | tail -1)"
+  [ -n "$MINIROOTFS_FILE" ] || { echo "ERROR: could not detect the latest alpine minirootfs from ${ALPINE_MIRROR}/latest-stable" >&2; exit 1; }
+  ALPINE_VERSION="${MINIROOTFS_FILE#alpine-minirootfs-}"
+  ALPINE_VERSION="${ALPINE_VERSION%%-${ALPINE_ARCH}*}"
+  echo "alpine: latest stable detected: ${ALPINE_VERSION}"
+fi
+ALPINE_BRANCH="v${ALPINE_VERSION%.*}"
+
+# apk-tools-static: the host-side tool; detect the latest from the main
+# repo listing for the host architecture.
+if [ -z "${APK_TOOLS_STATIC_VERSION:-}" ]; then
+  MAIN_HTML="$(curl -fsSL --retry 3 "${ALPINE_MIRROR}/${ALPINE_BRANCH}/main/${HOST_ARCH}/")"
+  APK_STATIC_FILE="$(printf '%s' "$MAIN_HTML" | grep -oE "apk-tools-static-[0-9][0-9.r-]*\.apk" | sort -uV | tail -1)"
+  [ -n "$APK_STATIC_FILE" ] || { echo "ERROR: could not detect the latest apk-tools-static from ${ALPINE_BRANCH}/main/${HOST_ARCH}" >&2; exit 1; }
+  APK_TOOLS_STATIC_VERSION="${APK_STATIC_FILE#apk-tools-static-}"
+  APK_TOOLS_STATIC_VERSION="${APK_TOOLS_STATIC_VERSION%.apk}"
+  echo "alpine: apk-tools-static detected: ${APK_TOOLS_STATIC_VERSION}"
+fi
 
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 WORK_DIR="${WORK_DIR:-$REPO_ROOT/.work}"
