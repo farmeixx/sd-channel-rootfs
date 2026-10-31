@@ -1,18 +1,31 @@
 #!/bin/sh
 # Grow the SD card root partition and then the root filesystem.
 # Runs on every boot; both operations are idempotent.
+#
+# The root device is resolved through its major:minor numbers, immune
+# to the /dev/root alias.
 
-ROOT_DEV=$(awk '$2 == "/" { print $1; exit }' /proc/mounts)
+MAJMIN=$(awk '$5 == "/" { print $3; exit }' /proc/self/mountinfo)
+ROOT_NAME=""
 
-case "$ROOT_DEV" in
-    *mmcblk1p1*)
-        echo "channel-grow-rootfs: booting from SD card: $ROOT_DEV"
-        DISK=${ROOT_DEV%p1}
-        parted -s "$DISK" resizepart 1 100%
-        partprobe "$DISK" 2>/dev/null || mdev -s 2>/dev/null || true
-        resize2fs "$ROOT_DEV"
+for devpath in /sys/class/block/*/dev; do
+    if [ "$(cat "$devpath")" = "$MAJMIN" ]; then
+        ROOT_NAME=$(basename "${devpath%/dev}")
+        break
+    fi
+done
+
+case "$ROOT_NAME" in
+    mmcblk1p1)
+        echo "channel-grow-rootfs: booting from SD card: /dev/$ROOT_NAME"
+        parted -s "/dev/mmcblk1" resizepart 1 100%
+        partprobe "/dev/mmcblk1" 2>/dev/null || mdev -s 2>/dev/null || true
+        resize2fs "/dev/$ROOT_NAME"
+        ;;
+    "")
+        echo "channel-grow-rootfs: could not resolve the root device"
         ;;
     *)
-        echo "channel-grow-rootfs: not booting from SD card ($ROOT_DEV), nothing to do"
+        echo "channel-grow-rootfs: not booting from SD card (/dev/$ROOT_NAME), nothing to do"
         ;;
 esac
