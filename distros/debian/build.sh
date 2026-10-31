@@ -52,6 +52,7 @@ sudo install -m 0644 "$REPO_ROOT/conf/usb.conf" "$ROOTFS/etc/usb-gadget.conf"
 test -x "$ROOTFS/usr/local/sbin/usb-gadget"
 test -s "$ROOTFS/etc/usb-gadget.conf"
 
+echo 'debconf debconf/frontend select Noninteractive' | sudo chroot "$ROOTFS" debconf-set-selections
 printf '%s\n' channel | sudo tee "$ROOTFS/etc/hostname" >/dev/null
 sudo tee "$ROOTFS/etc/hosts" >/dev/null <<'HOSTS'
 127.0.0.1 localhost

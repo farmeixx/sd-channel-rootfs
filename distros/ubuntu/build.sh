@@ -122,6 +122,7 @@ if [ ! -s "$ROOTFS/etc/machine-id" ]; then
   openssl rand -hex 16 | sudo tee "$ROOTFS/etc/machine-id" >/dev/null
 fi
 
+echo 'debconf debconf/frontend select Noninteractive' | sudo chroot "$ROOTFS" debconf-set-selections
 printf '%s\n' channel | sudo tee "$ROOTFS/etc/hostname" >/dev/null
 sudo tee "$ROOTFS/etc/hosts" >/dev/null <<'EOF'
 127.0.0.1 localhost
