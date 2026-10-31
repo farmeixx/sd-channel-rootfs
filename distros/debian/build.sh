@@ -31,7 +31,7 @@ sudo mmdebstrap \
   --keyring=/usr/share/keyrings/debian-archive-keyring.gpg \
   --aptopt='Apt::Install-Recommends "false"' \
   --include=debian-archive-keyring,systemd-sysv,openssh-server,iproute2,iputils-ping,dnsmasq,ca-certificates,kmod,udev,busybox-static,e2fsprogs,util-linux,procps,less,nano,ethtool,openssh-client,iw,wpasupplicant,wireless-regdb,dbus,network-manager,alsa-utils,alsa-ucm-conf,pulseaudio,pulseaudio-utils,libasound2-plugins,parted,tzdata \
-  trixie "$ROOTFS" https://deb.debian.org/debian
+  ${DEBIAN_SUITE:-stable} "$ROOTFS" https://deb.debian.org/debian
 
 #------------------------------------------------------------------#
 

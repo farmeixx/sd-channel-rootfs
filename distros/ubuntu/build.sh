@@ -10,12 +10,26 @@ ROOTFS_LABEL="${ROOTFS_LABEL:-ubuntu}"
 : "${KERNEL_MODULES_ARCHIVE:?set KERNEL_MODULES_ARCHIVE}"
 : "${KERNEL_CONFIG_FILE:?set KERNEL_CONFIG_FILE}"
 : "${KERNEL_SYSTEM_MAP_FILE:?set KERNEL_SYSTEM_MAP_FILE}"
-UBUNTU_VERSION="${UBUNTU_VERSION:-26.04.1}"
-UBUNTU_CODENAME="${UBUNTU_CODENAME:-resolute}"
 UBUNTU_ARCH="${UBUNTU_ARCH:-arm64}"
-UBUNTU_BASE_URL="${UBUNTU_BASE_URL:-https://cdimage.ubuntu.com/ubuntu-base/releases/26.04/release}"
-UBUNTU_BASE_TARBALL="ubuntu-base-${UBUNTU_VERSION}-base-${UBUNTU_ARCH}.tar.gz"
-UBUNTU_BASE_SHA256="${UBUNTU_BASE_SHA256:-5a1906794ced63a71a8119c3f211ef5f0bbe0a243001b4bbd41fdf80c5b219fd}"
+UBUNTU_RELEASES="https://cdimage.ubuntu.com/ubuntu-base/releases"
+
+# Ubuntu: an empty UBUNTU_VERSION (the conf default) detects the latest LTS
+# from the cdimage releases listing; set UBUNTU_VERSION in conf to pin.
+if [ -z "${UBUNTU_VERSION:-}" ]; then
+  RELEASES_HTML="$(curl -fsSL --retry 3 "${UBUNTU_RELEASES}/")"
+  UBUNTU_VERSION="$(printf '%s' "$RELEASES_HTML" | grep -oE '[0-9]{2}\.04' | sort -uV | tail -1)"
+  [ -n "$UBUNTU_VERSION" ] || { echo "ERROR: could not detect the latest ubuntu-base LTS" >&2; exit 1; }
+  echo "ubuntu: latest LTS detected: ${UBUNTU_VERSION}"
+fi
+case "$UBUNTU_VERSION" in
+  24.04*) UBUNTU_CODENAME="${UBUNTU_CODENAME:-noble}" ;;
+  26.04*) UBUNTU_CODENAME="${UBUNTU_CODENAME:-resolute}" ;;
+  *) echo "ERROR: add the $UBUNTU_VERSION codename mapping to the builder" >&2; exit 1 ;;
+esac
+UBUNTU_BASE_DIR="${UBUNTU_RELEASES}/${UBUNTU_VERSION}/release"
+UBUNTU_BASE_TARBALL="$(curl -fsSL --retry 3 "${UBUNTU_BASE_DIR}/" | grep -oE "ubuntu-base-[0-9.]+-base-${UBUNTU_ARCH}\.tar\.gz" | sort -uV | tail -1)"
+[ -n "$UBUNTU_BASE_TARBALL" ] || { echo "ERROR: ubuntu-base tarball not found in ${UBUNTU_BASE_DIR}" >&2; exit 1; }
+UBUNTU_BASE_URL="${UBUNTU_BASE_DIR}"
 
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 WORK_DIR="${WORK_DIR:-$REPO_ROOT/.work}"
