@@ -1,0 +1,29 @@
+#!/bin/sh
+# Grow the root filesystem to fill its partition.
+# SD card (mmcblk1p1): grow the partition first, then resize the filesystem.
+# userdata (mmcblk0): the partition is already full size, resize the
+# filesystem only. Runs on every boot; both operations are idempotent.
+
+ROOT_DEV=$(awk '$2 == "/" { print $1; exit }' /proc/mounts)
+
+case "$ROOT_DEV" in
+    *mmcblk1p1*)
+        echo "channel-grow-rootfs: booting from SD card: $ROOT_DEV"
+        DISK=${ROOT_DEV%p1}
+        parted -s "$DISK" resizepart 1 100%
+        partprobe "$DISK" 2>/dev/null || mdev -s 2>/dev/null || true
+        resize2fs "$ROOT_DEV"
+        ;;
+    *mmcblk0*)
+        echo "channel-grow-rootfs: booting from userdata: $ROOT_DEV"
+        USERDATA_DEV=$(readlink -f /dev/disk/by-partlabel/userdata)
+        if [ -b "$USERDATA_DEV" ]; then
+            resize2fs "$USERDATA_DEV"
+        else
+            echo "channel-grow-rootfs: userdata partition not found"
+        fi
+        ;;
+    *)
+        echo "channel-grow-rootfs: unknown root device $ROOT_DEV, nothing to do"
+        ;;
+esac

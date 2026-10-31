@@ -1,0 +1,11 @@
+[Unit]
+Description=Grow the Channel root filesystem to fill its partition
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/channel-grow-rootfs
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -97,6 +97,7 @@ sudo "$APK_STATIC" \
     wpa_supplicant wireless-regdb \
     openssl \
     alsa-lib alsa-utils alsa-ucm-conf \
+    parted e2fsprogs-extra tzdata \
     pulseaudio pulseaudio-alsa pulseaudio-utils alsa-plugins-pulse
 
 sudo chroot "$ROOTFS" /usr/sbin/update-ca-certificates
@@ -159,7 +160,7 @@ done
 for service in hwdrivers modules sysctl hostname bootmisc syslog localmount; do
   sudo chroot "$ROOTFS" /sbin/rc-update add "$service" boot
 done
-for service in udev-postmount dbus usb-gadget dnsmasq usb-sshd networkmanager pulseaudio-channel; do
+for service in udev-postmount dbus usb-gadget dnsmasq usb-sshd networkmanager pulseaudio-channel ntpd channel-grow-rootfs channel-zram; do
   sudo chroot "$ROOTFS" /sbin/rc-update add "$service" default
 done
 

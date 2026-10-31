@@ -1,0 +1,11 @@
+[Unit]
+Description=Activate 1 GiB of zram compressed swap
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/channel-zram-swap
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -30,7 +30,7 @@ sudo mmdebstrap \
   --components=main \
   --keyring=/usr/share/keyrings/debian-archive-keyring.gpg \
   --aptopt='Apt::Install-Recommends "false"' \
-  --include=debian-archive-keyring,systemd-sysv,openssh-server,iproute2,iputils-ping,dnsmasq,ca-certificates,kmod,udev,busybox-static,e2fsprogs,util-linux,procps,less,nano,ethtool,openssh-client,iw,wpasupplicant,wireless-regdb,dbus,network-manager,alsa-utils,alsa-ucm-conf,pulseaudio,pulseaudio-utils,libasound2-plugins \
+  --include=debian-archive-keyring,systemd-sysv,openssh-server,iproute2,iputils-ping,dnsmasq,ca-certificates,kmod,udev,busybox-static,e2fsprogs,util-linux,procps,less,nano,ethtool,openssh-client,iw,wpasupplicant,wireless-regdb,dbus,network-manager,alsa-utils,alsa-ucm-conf,pulseaudio,pulseaudio-utils,libasound2-plugins,parted,tzdata \
   trixie "$ROOTFS" https://deb.debian.org/debian
 
 #------------------------------------------------------------------#
@@ -82,9 +82,10 @@ sudo ssh-keygen -A -f "$ROOTFS"
 sudo systemctl --root="$ROOTFS" disable ssh.socket 2>/dev/null || true
 sudo systemctl --root="$ROOTFS" disable dnsmasq.service 2>/dev/null || true
 sudo systemctl --root="$ROOTFS" enable \
-  usb-gadget.service usb-dhcp.service pulseaudio-channel.service \
+  usb-gadget.service usb-dhcp.service pulseaudio-channel.service channel-grow-rootfs.service channel-zram.service \
   NetworkManager.service dbus.socket
 sudo systemctl --root="$ROOTFS" enable ssh.service
+sudo systemctl --root="$ROOTFS" enable systemd-timesyncd.service 2>/dev/null || true
 
 sudo mkdir -p "$ROOTFS/var/log/journal"
 

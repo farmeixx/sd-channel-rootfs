@@ -1,0 +1,20 @@
+#!/bin/sh
+# Configure 1 GiB of compressed RAM swap on /dev/zram0 using only base
+# tools (sysfs, mkswap, swapon). Safe to run on every boot.
+
+ZRAM_SIZE_BYTES=1073741824
+
+if grep -q zram0 /proc/swaps 2>/dev/null; then
+    echo "channel-zram-swap: zram0 already active"
+    exit 0
+fi
+
+if [ ! -e /sys/block/zram0 ]; then
+    echo "channel-zram-swap: no zram device in the kernel"
+    exit 0
+fi
+
+echo "$ZRAM_SIZE_BYTES" > /sys/block/zram0/disksize
+mkswap /dev/zram0
+swapon /dev/zram0
+echo "channel-zram-swap: 1 GiB zram swap active"

@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+
+description="Grow the Channel root filesystem to fill its partition"
+
+depend() {
+    need localmount
+}
+
+start() {
+    ebegin "Growing the Channel root filesystem"
+    /usr/local/sbin/channel-grow-rootfs
+    eend $?
+}

@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+
+description="Activate 1 GiB of zram compressed swap"
+
+depend() {
+    need localmount
+}
+
+start() {
+    ebegin "Activating Channel zram swap"
+    /usr/local/sbin/channel-zram-swap
+    eend $?
+}

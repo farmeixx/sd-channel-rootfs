@@ -90,6 +90,7 @@ sudo chroot "$ROOTFS" /bin/sh -ec '
     less nano ethtool iw \
     wpasupplicant wireless-regdb \
     alsa-utils alsa-ucm-conf libasound2-plugins \
+    parted tzdata \
     pulseaudio pulseaudio-utils
   apt-get clean
   rm -rf /var/lib/apt/lists/*
@@ -153,10 +154,11 @@ sudo ssh-keygen -A -f "$ROOTFS"
 sudo systemctl --root="$ROOTFS" disable ssh.socket 2>/dev/null || true
 sudo systemctl --root="$ROOTFS" disable dnsmasq.service 2>/dev/null || true
 sudo systemctl --root="$ROOTFS" enable \
-  usb-gadget.service usb-dhcp.service pulseaudio-channel.service \
+  usb-gadget.service usb-dhcp.service pulseaudio-channel.service channel-grow-rootfs.service channel-zram.service \
   NetworkManager.service dbus.socket
 
 sudo systemctl --root="$ROOTFS" enable ssh.service
+sudo systemctl --root="$ROOTFS" enable systemd-timesyncd.service 2>/dev/null || true
 test -L "$ROOTFS/etc/systemd/system/multi-user.target.wants/usb-gadget.service"
 test -L "$ROOTFS/etc/systemd/system/multi-user.target.wants/usb-dhcp.service"
 test -L "$ROOTFS/etc/systemd/system/multi-user.target.wants/pulseaudio-channel.service"
